@@ -871,11 +871,20 @@ class Counter(Box):
         self.decrement_width_halve_size(lhs=self.i,rhs=self.o,extra_bottom=[self.rst,self.clk, self.ld ])
 
 class Clock(Box):
+    @property
+    def prog_data(self):
+        return self.delay
+    @prog_data.setter
+    def prog_data(self, value):
+        self.delay= int(value)
+        self.update_label()
+
     def __init__(self, *args, **kwargs):
         self.delay = 1000
         super().__init__(*args, label='Clock', height=0, width=1, **kwargs)
         self.o = self.create_right_pin('')
         self.value = '0'
+        self.update_label()
         circuit.Figure.default_canvas.after(self.delay, lambda: self.tick())
 
     def tick(self):
@@ -889,10 +898,15 @@ class Clock(Box):
     def increase(self):
         if self.delay > 100: # down to 1/16 second only
             self.delay //=2
+            self.update_label()
     def decrease(self):
         if self.delay < 100000: # up to 128 seconds only
             self.delay *=2
+            self.update_label()
 
+    def update_label(self):
+        if self.delay != 1000:
+            self.rename("Clock\n%4.2fHz" % (1000 / self.delay))
 
 class OCLatch(Latch):
     def __init__(self, *args, **kwargs):
